@@ -17,7 +17,7 @@
 class Node:
 
     # take in an x, y location and an id
-    def __init__(self, id, y1=0, y2=0, x1=0, x2=0):
+    def __init__(self, id, y1=0, y2=0, x1=0, x2=0, val=0):
         self._y1 = y1
         self._y2 = y2
         self._x1 = x1
@@ -28,6 +28,7 @@ class Node:
         self._parent = None
         self._pre = -1
         self._post = -1
+        self._val = val
         self._neighbors = []
 
     # accessor functions
@@ -63,6 +64,9 @@ class Node:
 
     def setPost(self, p):
         self._post = p
+        
+    def val(self):
+        return self._val
 
     def neighbors(self):
         return self._neighbors

@@ -4,11 +4,6 @@
     CS5800 - Homework4
 """
 
-import simple_graph as gs
-import graph_tools as gt
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 # global variable for handling pre/post
 step = 0
@@ -110,7 +105,7 @@ def bfs_explore(graph, node, verbose=False):
         # for each node in the neighbors list of p
         for node in p.neighbors():
             # if the node is not visited
-            if not node.visited():
+            if not node.visited() and node.val()!=0:
                 # set visited to true
                 node.setVisited(True)
                 # set the parent to p
@@ -139,7 +134,7 @@ def bfs(graph, verbose=False):
         # if the node is not visited
             # call bfs_explore with graph, node, and verbose
     for node in graph:
-        if not node.visited():
+        if not node.visited() and node.val()!=0:
             bfs_explore(graph, node, verbose=verbose)
 
 
