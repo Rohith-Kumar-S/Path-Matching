@@ -72,7 +72,7 @@ class Node:
         return self._neighbors
     
     def get_coordinates(self):
-        return (self._x1, self._y1, self._x2, self._y2)
+        return (self._y1, self._y2, self._x1, self._x2)
 
     # adds a neighbor to this node's adjacency list, and this node to the neighbor's list
     def addUndirectedNeighbor(self, n):

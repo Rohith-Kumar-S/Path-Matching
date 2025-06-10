@@ -4,7 +4,6 @@
     CS5800 - Homework4
 """
 
-
 # global variable for handling pre/post
 step = 0
 
@@ -105,7 +104,7 @@ def bfs_explore(graph, node, verbose=False):
         # for each node in the neighbors list of p
         for node in p.neighbors():
             # if the node is not visited
-            if not node.visited() and node.val()!=0:
+            if node and not node.visited():
                 # set visited to true
                 node.setVisited(True)
                 # set the parent to p
@@ -125,16 +124,17 @@ def bfs(graph, verbose=False):
 
     # initialize each node in the graph (visited -> False; pre -> -1; post -> -1; parent -> None)
     for node in graph:
-        node.setVisited(False)
-        node.setPre(-1)
-        node.setPost(-1)
-        node.setParent(None) 
+        if node:
+            node.setVisited(False)
+            node.setPre(-1)
+            node.setPost(-1)
+            node.setParent(None) 
 
     # for each node in the graph
         # if the node is not visited
             # call bfs_explore with graph, node, and verbose
     for node in graph:
-        if not node.visited() and node.val()!=0:
+        if node and not node.visited():
             bfs_explore(graph, node, verbose=verbose)
 
 
@@ -177,8 +177,7 @@ def main():
     print("\n#1 Running BFS on the graph")
     bfs(graph, verbose=True)
     
-    
-    #2
+    # 2
     print("\n2# Running DFS and BFS on a simple graph with 14 nodes")
     graph = []
     graph.append(gs.Node(0, 100, 300))
@@ -223,8 +222,7 @@ def main():
     print("\n2# Running BFS on the graph")
     bfs(graph, verbose=True)
 
-
-    #3
+    # 3
     print("\n3# Running DFS on a random graph with varying vertex counts and densities")
     N = [20, 100, 500]
     percentages = [[], [], []]
@@ -237,7 +235,7 @@ def main():
             for node in graph:
                 if not node.visited():
                     unvisited += 1
-            percentages[i].append(1-(unvisited/len(graph)))
+            percentages[i].append(1 - (unvisited / len(graph)))
     
     plt.plot(np.linspace(0, N[0], 25), percentages[0], label="vertices=20")
     plt.plot(np.linspace(0, N[1], 25), percentages[1], label="vertices=100")
@@ -255,4 +253,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+
 
