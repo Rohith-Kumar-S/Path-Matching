@@ -20,22 +20,26 @@ class AlgorithmsImpl:
         return (y1+y2)/2 , (x1+x2)/2
     
     def get_heruistic_cost(self, source_coords, target_coords, heruistic = "euclidean"):
+        heruistic_method = None
         match heruistic:
             case "euclidean":
-                return self.euclidean_distance(
-                    *self.get_coordinate_midpoints(*source_coords),
-                    *self.get_coordinate_midpoints(*target_coords),
-                    stride=20
-                )
+                heruistic_method = self.euclidean_distance
             case "manhattan":
-                return self.manhattan_distance(
-                    *self.get_coordinate_midpoints(*source_coords),
-                    *self.get_coordinate_midpoints(*target_coords),
-                    stride=20
-                )
+                heruistic_method = self.manhattan_distance
+
+        distances = []
+        for coords in target_coords:
+            distances.append(heruistic_method(
+                *self.get_coordinate_midpoints(*source_coords),
+                *self.get_coordinate_midpoints(*coords),
+                stride=20
+            ))
+        return min(distances) if distances else float("inf")
 
     def a_star(self, graph, target_coords, include_heuristic=True, heuristic = "euclidean"):
         # target_coords = self.get_coordinate_midpoints(*target_coords)
+        matches = 0
+        blocks_to_match = len(target_coords)
         for node in graph:
             node.setParent(None)
             node.setCost(float("inf"))
@@ -46,14 +50,8 @@ class AlgorithmsImpl:
         start = graph[0]
         start.setCost(0)
         if include_heuristic:
-            print("heuristic: ", self.get_heruistic_cost(start.get_coordinates(), target_coords, heuristic), heuristic)
             start.setHeuristicCost(
                 self.get_heruistic_cost(start.get_coordinates(), target_coords, heuristic)
-                # self.euclidean_distance(
-                #     *self.get_coordinate_midpoints(*start.get_coordinates()),
-                #     *target_coords,
-                #     stride=20
-                # )
             )
         queue = []
         heapq.heappush(queue, (start.cost() + start.getHeuristicCost() if include_heuristic else start.cost(), start.id(), start))  # f = g + h
@@ -69,14 +67,17 @@ class AlgorithmsImpl:
             # current_coords = self.get_coordinate_midpoints(*current.get_coordinates())
             current_coords = current.get_coordinates()
             # Goal check (if coords match target)
-            if current_coords == target_coords:
-                match_found = True
-                break
+            if current.isTarget():
+                matches += 1
+                target_coords.remove(current_coords)
+                if matches == blocks_to_match:
+                    match_found = True
+                    return True, search_coords
 
             for neighbor in current.neighbors():
                 neighbor_coords = neighbor.get_coordinates()
                 # neighbor_coords = self.get_coordinate_midpoints(*neighbor_block_coords)
-                known_cost = current.cost() + self.get_heruistic_cost(current_coords, neighbor_coords, heuristic)
+                known_cost = current.cost() + self.get_heruistic_cost(current_coords, [neighbor_coords], heuristic)
 
                 # known_cost = current.cost() + self.euclidean_distance(*current_coords, *neighbor_coords, stride=20)
                 if not neighbor.visited() and known_cost < neighbor.cost():
@@ -94,7 +95,9 @@ class AlgorithmsImpl:
                     heapq.heappush(queue, (new_cost, neighbor.id(), neighbor))
         return match_found, search_coords
 
-    def bfs(self, node, verbose=False):
+    def bfs(self, node, target_coords, verbose=False):
+        matches = 0
+        blocks_to_match = len(target_coords)
         step = 0
         match_found = False
         search_coords = []
@@ -136,8 +139,12 @@ class AlgorithmsImpl:
                     node.setParent(p)
                     if node.isTarget():
                         print("Found target node %d" % (node.id()))
+                        matches+=1
+                        target_coords.remove(node.get_coordinates())
                         # If the target is found, we can stop the search
-                        return True, search_coords
+                        if matches == blocks_to_match:
+                            match_found = True
+                            return True, search_coords
                     # append the node to the queue
                     Q.append(node)
 
