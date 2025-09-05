@@ -72,7 +72,7 @@ def dfs(graph, verbose=False):
 
 
 # Executes a BFS search starting at the given node
-def bfs_explore(graph, node, verbose=False):
+def bfs_explore(graph, node, verbose=False, img = None):
     global step
     # set the node as visited
     node.setVisited(True)
@@ -105,10 +105,16 @@ def bfs_explore(graph, node, verbose=False):
         for node in p.neighbors():
             # if the node is not visited
             if node and not node.visited():
+                y1, y2, x1,x2 = node.get_coordinates()
+                img[y1:y2, x1:x2] = [127, 127, 127]
                 # set visited to true
                 node.setVisited(True)
                 # set the parent to p
                 node.setParent(p)
+                if node.isTarget():
+                    print("Found target node %d" % (node.id()))
+                    # If the target is found, we can stop the search
+                    return
                 # append the node to the queue
                 Q.append(node)
 
