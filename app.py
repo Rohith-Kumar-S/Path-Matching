@@ -24,6 +24,9 @@ if "target_coords" not in st.session_state:
     
 if "graph_generator" not in st.session_state:
     st.session_state.graph_generator = None
+
+if "generated_graphs" not in st.session_state:
+    st.session_state.generated_graphs = []
     
 def reset_image():
     st.session_state.img = np.ones(st.session_state.img_size, dtype=np.uint8) * 255
@@ -31,8 +34,8 @@ def reset_image():
 def initialize_image():
     obstacle_1 = np.ones(st.session_state.img_size, dtype=np.uint8)*255
     # obstacle_1[100:120, 100:480] = 0
-    obstacle_1[20:100, 20:80] = [0,0,0]
-    obstacle_1[60:120, 120:200] = [0,0,0]
+    obstacle_1[20:120, 20:100] = [0,0,0]
+    obstacle_1[0:120, 120:200] = [0,0,0]
     obstacle_1[0:60, 240:400] = [0,0,0]
     obstacle_1[0:60, 240:400] = [0,0,0]
     obstacle_1[80:120, 240:280] = [0,0,0]
@@ -47,9 +50,17 @@ def initialize_image():
     obstacle_1[120:160, 640:1000] = [0,0,0]
     obstacle_1[120:160, 640:1000] = [0,0,0]
 
+    obstacle_1[0:20, 0:20] = [255,0,0]
+    obstacle_1[180:200, 300:320] = [255,0,0]
     obstacle_1[300:320, 600:620] = [0,0,255]
     obstacle_1[440:460, 20:40] = [0,0,255]
     st.session_state.img = obstacle_1.copy()
+    
+def draw_source_and_targets():
+    st.session_state.img[0:20, 0:20] = [255,0,0]
+    st.session_state.img[180:200, 300:320] = [255,0,0]
+    st.session_state.img[300:320, 600:620] = [0,0,255]
+    st.session_state.img[440:460, 20:40] = [0,0,255]
 
 
 if "img" not in st.session_state:
@@ -77,38 +88,42 @@ if st.session_state.execute:
     print("Executing algorithm...")
     initialize_image()
     _graph_gen = GraphGenerator(img=st.session_state.img, kernel_size=20, stride=20)
-    ret, blocks = _graph_gen.execute()
-    print("ret: ", ret, len(blocks))
-
+    generated_graphs = []
+    for i in range(2):
+        ret, blocks = _graph_gen.execute()
+        if ret:
+            generated_graphs.append(blocks)
+    print("ret: ", ret, len(generated_graphs))
+    st.session_state.generated_graphs = generated_graphs
+    source_coords = []
     target_coords = set()
-    source_coords = [(0, 20, 0, 20)]
+    source_coords.append((0, 20, 0, 20))
+    source_coords.append((180, 200, 300, 320))
     target_coords.add((300, 320, 600, 620))
     target_coords.add((440, 460, 20, 40))
     st.session_state.target_coords = target_coords
-    for coords in source_coords:
+    for i, coords in enumerate(source_coords):
         source_index = _graph_gen.get_index_from_coordinates(coords)
-        blocks[source_index].setIsSource(True)
+        generated_graphs[i][source_index].setIsSource(True)
 
-    for coords in target_coords:
-        target_index = _graph_gen.get_index_from_coordinates(coords)
-        blocks[target_index].setIsTarget(True)
+    for i, _ in enumerate(source_coords):
+        for coords in target_coords:
+            target_index = _graph_gen.get_index_from_coordinates(coords)
+            generated_graphs[i][target_index].setIsTarget(True)
     st.session_state.graph_generator = _graph_gen
 
     print(blocks[0].isSource(), blocks[780].isTarget())
 
     match st.session_state.algorithm:
         case "Breadth-First Search":
-            graph = list(blocks.values())
-            res, st.session_state.search_coords = AlgorithmsImpl().bfs(graph[0], target_coords = target_coords.copy())
-            print("bfs: ", res, "len", len(st.session_state.search_coords))
+            res, st.session_state.search_coords_total = AlgorithmsImpl().bfs(st.session_state.generated_graphs, source_coords = source_coords.copy(), target_coords = target_coords.copy())
+            print("bfs: ", res, "len", len(st.session_state.search_coords_total))
         case "Dijkstra":
-            graph = list(blocks.values())
-            res, st.session_state.search_coords = AlgorithmsImpl().a_star(graph, target_coords = target_coords.copy(), include_heuristic=False)
-            print("dijkstra: ", res, "len", len(st.session_state.search_coords))
+            res, st.session_state.search_coords_total = AlgorithmsImpl().a_star(st.session_state.generated_graphs, source_coords = source_coords.copy(), target_coords = target_coords.copy(), include_heuristic=False)
+            print("dijkstra: ", res, "len", len(st.session_state.search_coords_total))
         case "A*":
-            graph = list(blocks.values())
-            res, st.session_state.search_coords = AlgorithmsImpl().a_star(graph, target_coords = target_coords.copy(), heuristic = st.session_state.heuristic.lower())
-    print(f"{st.session_state.algorithm}: ", res, "len", len(st.session_state.search_coords))
+            res, st.session_state.search_coords_total = AlgorithmsImpl().a_star(st.session_state.generated_graphs, source_coords = source_coords.copy(), target_coords = target_coords.copy(), heuristic = st.session_state.heuristic.lower())
+    print(f"{st.session_state.algorithm}: ", res, "len", len(st.session_state.search_coords_total))
 
 col1, col2 = st.columns([5,2], vertical_alignment="top")
 with col2:
@@ -119,18 +134,7 @@ with col2:
         st.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
 
 placeholder = col1.empty()
-if not st.session_state.execute:
-    print('Algo not executed')
-    # draw_grids()
-    placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
-
-else:
-    print('Algo executed')
-    for coord in st.session_state.search_coords:
-        y1, y2, x1,x2 = coord
-        st.session_state.img[y1:y2, x1:x2] = [127, 127, 127]
-        
-        st.markdown(
+st.markdown(
     """
     <style>
     img {
@@ -141,18 +145,31 @@ else:
     """,
     unsafe_allow_html=True
     )
-        placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
-        time.sleep(0.02)
-
-    for coords in list(st.session_state.target_coords):
-        index = st.session_state.graph_generator.get_index_from_coordinates(coords)
-        print(index)
-        node = graph[index]
-        while node.parent()!=-1 and node.parent() is not None:
-            print(node.parent().id())
-            node = node.parent()
-            y1, y2, x1,x2 = node.get_coordinates()
-            st.session_state.img[y1:y2, x1:x2] = [255, 255, 0]
+if not st.session_state.execute:
+    print('Algo not executed')
+    # draw_grids()
     placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
-    st.session_state.execute = False
 
+else:
+    print('Algo executed')
+    colors = [[100,127, 128], [145, 173, 200]]
+    for i, searchcoords in enumerate(st.session_state.search_coords_total):
+        graph = list(st.session_state.generated_graphs[i].values())
+        for coords in searchcoords:
+            y1, y2, x1,x2 = coords
+            st.session_state.img[y1:y2, x1:x2] = colors[i]
+            placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
+            time.sleep(0.08)
+        draw_source_and_targets()
+    for i, searchcoords in enumerate(st.session_state.search_coords_total):
+        graph = list(st.session_state.generated_graphs[i].values())
+        for coords in list(st.session_state.target_coords):
+            index = st.session_state.graph_generator.get_index_from_coordinates(coords)
+            node =  graph[index]
+            while node.parent()!=-1 and node.parent() is not None:
+                node = node.parent()
+                y1, y2, x1,x2 = node.get_coordinates()
+                st.session_state.img[y1:y2, x1:x2] = [255, 255, 0]
+        draw_source_and_targets()
+        placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
+    st.session_state.execute = False

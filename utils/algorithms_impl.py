@@ -35,8 +35,19 @@ class AlgorithmsImpl:
                 stride=20
             ))
         return min(distances) if distances else float("inf")
+    
+    def a_star(self, graphs, source_coords, target_coords, include_heuristic=True, heuristic = "euclidean"):
+        match_found = False
+        search_coords_total = []
+        for i, coords in enumerate(source_coords):
+            graph = list(graphs[i].values())
+            source_block = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
+            match_found, search_coords = self.a_star_explore(graph, source_block, target_coords.copy(), include_heuristic=include_heuristic, heuristic=heuristic)
+            print("match_found: ", match_found)
+            search_coords_total.append(search_coords)
+        return match_found, search_coords_total
 
-    def a_star(self, graph, target_coords, include_heuristic=True, heuristic = "euclidean"):
+    def a_star_explore(self, graph, source_block, target_coords, include_heuristic=True, heuristic = "euclidean"):
         # target_coords = self.get_coordinate_midpoints(*target_coords)
         matches = 0
         blocks_to_match = len(target_coords)
@@ -46,15 +57,14 @@ class AlgorithmsImpl:
             if include_heuristic:     
                 node.setHeuristicCost(float("inf"))
             node.setVisited(False)
-
-        start = graph[0]
-        start.setCost(0)
+            
+        source_block.setCost(0)
         if include_heuristic:
-            start.setHeuristicCost(
-                self.get_heruistic_cost(start.get_coordinates(), target_coords, heuristic)
+            source_block.setHeuristicCost(
+                self.get_heruistic_cost(source_block.get_coordinates(), target_coords, heuristic)
             )
         queue = []
-        heapq.heappush(queue, (start.cost() + start.getHeuristicCost() if include_heuristic else start.cost(), start.id(), start))  # f = g + h
+        heapq.heappush(queue, (source_block.cost() + source_block.getHeuristicCost() if include_heuristic else source_block.cost(), source_block.id(), source_block))  # f = g + h
         match_found = False
         search_coords = []
         while queue:
@@ -94,8 +104,20 @@ class AlgorithmsImpl:
                         
                     heapq.heappush(queue, (new_cost, neighbor.id(), neighbor))
         return match_found, search_coords
+    
+    def bfs(self, graphs, source_coords, target_coords, verbose=False):
+        search_coords_total = []
+        match_found = False
+        print(len(graphs), len(source_coords))
+        for i, coords in enumerate(source_coords):
+            graph = list(graphs[i].values())
+            node = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
+            match_found, search_coords = self.bfs_explore(node, target_coords.copy(), verbose=verbose)
+            print("match_found: ", match_found)
+            search_coords_total.append(search_coords)
+        return match_found, search_coords_total
 
-    def bfs(self, node, target_coords, verbose=False):
+    def bfs_explore(self, node, target_coords, verbose=False):
         matches = 0
         blocks_to_match = len(target_coords)
         step = 0
