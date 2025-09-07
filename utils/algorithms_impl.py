@@ -1,10 +1,15 @@
 import heapq
+import numpy as np
+from scipy.optimize import linprog
 
 
 class AlgorithmsImpl:
     
-    def __init__(self):
-        pass
+    def __init__(self, generated_graphs, source_coords, target_coords, heuristic=None):
+        self.generated_graphs = generated_graphs
+        self.source_coords = source_coords
+        self.target_coords = target_coords
+        self.heuristic = heuristic
     
     def get_index_from_coordinates(self, coords, stride, w):
         i, j = coords[0]//stride, coords[2]//stride
@@ -36,19 +41,118 @@ class AlgorithmsImpl:
             ))
         return min(distances) if distances else float("inf")
     
-    def a_star(self, graphs, source_coords, target_coords, include_heuristic=True, heuristic = "euclidean"):
+    def build_linprog_params(self, sources, targets, distances):
+        # Cost vector c (row-flattened)
+        
+        missing_indices = set()
+        max_len = 0
+        if len(sources) == len(targets):
+            balance_condition = "balanced"
+            max_len = len(sources)
+        elif len(sources) < len(targets):
+            balance_condition = "source_imbalance"
+            max_len = len(targets)
+        else:
+            balance_condition = "target_imbalance"
+            max_len = len(sources)
+
+        if balance_condition == "target_imbalance":
+            missing_targets = len(sources) - len(targets)
+            for i in range(missing_targets):
+                missing_indices.add(len(targets)+i)
+                for row in distances:
+                    row.extend([1e6] * missing_targets)
+
+        elif balance_condition == "source_imbalance":
+            missing_sources = len(targets) - len(sources)
+            for i in range(missing_sources):
+                missing_indices.add(len(sources)+i)
+                distances.append([1e6] * len(targets))
+      
+        c = []
+        for distance in distances:
+            c.extend(distance)
+        c = np.array(c)
+
+        # Build constraints
+        A_eq = []
+        b_eq = []
+
+        # Source constraints: each source assigned once
+        for i in range(max_len):
+            row = [0] * len(c)
+            for j in range(max_len):
+                row[i*max_len + j] = 1
+            A_eq.append(row)
+            b_eq.append(1)
+
+        # Target constraints: each target assigned once
+        for j in range(max_len):
+            row = [0] * len(c)
+            for i in range(max_len):
+                row[i*max_len + j] = 1
+            A_eq.append(row)
+            b_eq.append(1)
+
+        A_eq = np.array(A_eq)
+        b_eq = np.array(b_eq)
+        bounds = np.array([(0, 1)]*len(c))
+        return c, A_eq, b_eq, bounds, sources, targets, balance_condition, missing_indices, max_len
+
+    def bipartite_linprog(self, c, A_eq, b_eq, bounds, sources, targets, balance_condition, missing_indices, max_len):
+        print("c:", c)
+        print("A_eq:\n", A_eq)
+        print("b_eq:", b_eq)
+        print("bounds:", bounds)
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
+        
+        matchings = {}
+        
+        for i in range(len(sources)**2):
+            matched_edge = result.x[i]
+            target_index = i%max_len
+            if matched_edge > 0.5 and target_index not in missing_indices:
+                matchings[sources[i//max_len]] = i%max_len
+        return matchings
+                
+        
+    def find_distance(self, graph, target_coords):
+        distances = []
+        for coords in target_coords:
+            distance = 0
+            index = self.get_index_from_coordinates(coords, stride=20, w=1000)
+            node =  graph[index]
+            while node.parent()!=-1 and node.parent() is not None:
+                    node = node.parent()
+                    distance+=1
+            distances.append(distance)
+        return distances
+    
+    def run(self, algorithm = "astar"):
         match_found = False
         search_coords_total = []
-        for i, coords in enumerate(source_coords):
-            graph = list(graphs[i].values())
+        distance_by_source = []
+        for i, coords in enumerate(self.source_coords):
+            graph = list(self.generated_graphs[i].values())
             source_block = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
-            match_found, search_coords = self.a_star_explore(graph, source_block, target_coords.copy(), include_heuristic=include_heuristic, heuristic=heuristic)
+            match algorithm:
+                case "A*":
+                    match_found, search_coords = self.a_star_explore(graph, source_block, self.target_coords.copy(), heuristic=self.heuristic.lower())
+                case "Dijkstra":
+                    match_found, search_coords = self.a_star_explore(graph, source_block, self.target_coords.copy(), include_heuristic=False)
+                case "Breadth-First Search":
+                    match_found, search_coords = self.bfs_explore(source_block, self.target_coords.copy())
             print("match_found: ", match_found)
+            distance_by_source.append(self.find_distance(graph, self.target_coords))
             search_coords_total.append(search_coords)
-        return match_found, search_coords_total
+        print("distance_by_source: ", distance_by_source)
+        matchings = self.bipartite_linprog(*self.build_linprog_params(self.source_coords, self.target_coords, distance_by_source))
+        print(matchings)
+        return match_found, search_coords_total, matchings
 
     def a_star_explore(self, graph, source_block, target_coords, include_heuristic=True, heuristic = "euclidean"):
         # target_coords = self.get_coordinate_midpoints(*target_coords)
+        print("heuristic: ", heuristic)
         matches = 0
         blocks_to_match = len(target_coords)
         for node in graph:
@@ -104,18 +208,6 @@ class AlgorithmsImpl:
                         
                     heapq.heappush(queue, (new_cost, neighbor.id(), neighbor))
         return match_found, search_coords
-    
-    def bfs(self, graphs, source_coords, target_coords, verbose=False):
-        search_coords_total = []
-        match_found = False
-        print(len(graphs), len(source_coords))
-        for i, coords in enumerate(source_coords):
-            graph = list(graphs[i].values())
-            node = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
-            match_found, search_coords = self.bfs_explore(node, target_coords.copy(), verbose=verbose)
-            print("match_found: ", match_found)
-            search_coords_total.append(search_coords)
-        return match_found, search_coords_total
 
     def bfs_explore(self, node, target_coords, verbose=False):
         matches = 0
