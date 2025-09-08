@@ -168,7 +168,6 @@ else:
     for i, coords in enumerate(st.session_state.source_coords):
         graph = list(st.session_state.generated_graphs[i].values())
         target_index = st.session_state.matches.get(coords, None)
-        print("target_index: ", target_index)
         if target_index is None:
             continue 
         index = st.session_state.graph_generator.get_index_from_coordinates(list(st.session_state.target_coords)[target_index])
@@ -178,6 +177,5 @@ else:
             y1, y2, x1,x2 = node.get_coordinates()
             st.session_state.img[y1:y2, x1:x2] = [255, 255, 0]
         draw_source_and_targets()
-        print('Ran for target: ', target_index)
         placeholder.image(draw_grids(st.session_state.img.copy()), caption='Obstacle 1')
     st.session_state.execute = False
