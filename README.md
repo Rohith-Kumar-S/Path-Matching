@@ -1,4 +1,4 @@
-# Multi-Source Multi-Target Pathfinding with Bipartite Matching
+# Path-Matching - Multi-Source Multi-Target Pathfinding with Bipartite Matching
 
 An interactive visualization tool for solving optimal assignment problems using shortest path algorithms and bipartite matching. This project demonstrates the integration of pathfinding algorithms with assignment optimization, applicable to real-world scenarios like ride-sharing, delivery routing, and emergency vehicle dispatch.
 
