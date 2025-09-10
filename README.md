@@ -2,7 +2,7 @@
 
 An interactive visualization tool for solving optimal assignment problems using shortest path algorithms and bipartite matching. This project demonstrates the integration of pathfinding algorithms with assignment optimization, applicable to real-world scenarios like ride-sharing, delivery routing, and emergency vehicle dispatch.
 
-## 🎯 Features
+## Features
 
 ### Core Capabilities
 - **Graph Generation**
@@ -31,7 +31,7 @@ An interactive visualization tool for solving optimal assignment problems using 
   - Path distance calculations
   - Matching quality metrics
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 ```bash
@@ -87,7 +87,7 @@ The application will open in your default web browser at `http://localhost:8501`
    - **Other colors**: Search space explored by the algorithm
    - View metrics dashboard for performance comparison
 
-## 🎨 Visualization Guide
+## Visualization Guide
 
 | Color | Meaning |
 |-------|---------|
@@ -97,7 +97,7 @@ The application will open in your default web browser at `http://localhost:8501`
 | Yellow | Final shortest path |
 | Other Colors | Algorithm exploration paths (one color per source) |
 
-## 🧮 Algorithm Details
+## Algorithm Details
 
 ### Pathfinding Algorithms
 
@@ -130,7 +130,7 @@ The application will open in your default web browser at `http://localhost:8501`
 - Faster but potentially suboptimal
 - Time Complexity: O(n² log n)
 
-## 💡 Applications
+## Applications
 
 This project demonstrates solutions applicable to:
 
@@ -141,7 +141,7 @@ This project demonstrates solutions applicable to:
 - **Game AI**: Multi-unit pathfinding and target assignment
 - **Network Routing**: Optimal resource allocation
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 project/
@@ -153,7 +153,7 @@ project/
 └── README.md
 ```
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 The application tracks and displays:
 - **Pathfinding Time**: Time to compute all shortest paths
@@ -162,7 +162,7 @@ The application tracks and displays:
 - **Optimality Gap**: Difference between greedy and optimal solutions
 - **Search Space**: Nodes explored during pathfinding
 
-## 🔬 Technical Implementation
+## Technical Implementation
 
 - **Language**: Python 3.8+
 - **Web Framework**: Streamlit
@@ -171,9 +171,9 @@ The application tracks and displays:
 - **Visualization**: Numpy and OpenCv integration with Streamlit
 - **Data Structures**: NumPy arrays for grid representation
 
-## 🚧 Future Enhancements
+## Future Enhancements
 
-- [ ] Dynamic obstacles and moving targets
-- [ ] Additional algorithms (D*, Jump Point Search)
-- [ ] Path smoothing and post-processing
-- [ ] Export results to CSV/JSON
+- Dynamic obstacles and moving targets
+- Additional algorithms (D*, Jump Point Search)
+- Path smoothing and post-processing
+- Export results to CSV/JSON
