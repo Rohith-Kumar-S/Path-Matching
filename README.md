@@ -66,7 +66,7 @@ streamlit run app.py
 
 The application will open in your default web browser at `http://localhost:8501`
 
-## 📖 How to Use
+## How to Use
 
 ### 1. **Map Setup**
    - Select a pre-defined obstacle map or create custom obstacles
