@@ -6,13 +6,15 @@ from scipy.optimize import linprog
 
 class AlgorithmsImpl:
     
-    def __init__(self, generated_graphs, source_coords, target_coords, heuristic=None):
+    def __init__(self, generated_graphs, source_coords, target_coords, img_size, heuristic=None):
         self.generated_graphs = generated_graphs
         self.source_coords = source_coords
         self.target_coords = target_coords
         self.heuristic = heuristic
+        self.img_size = img_size
     
-    def get_index_from_coordinates(self, coords, stride, w):
+    def get_index_from_coordinates(self, coords, stride):
+        w = self.img_size[1]
         i, j = coords[0]//stride, coords[2]//stride
         return i * (w // stride) + j
     
@@ -133,7 +135,7 @@ class AlgorithmsImpl:
         distances = []
         for target_index, coords in enumerate(target_coords):
             distance = 0
-            index = self.get_index_from_coordinates(coords, stride=20, w=1000)
+            index = self.get_index_from_coordinates(coords, stride=20)
             node =  graph[index]
             while node.parent()!=-1 and node.parent() is not None:
                     node = node.parent()
@@ -150,7 +152,7 @@ class AlgorithmsImpl:
         bipartite_matching_time = 0
         for i, coords in enumerate(self.source_coords):
             graph = list(self.generated_graphs[i].values())
-            source_block = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
+            source_block = graph[self.get_index_from_coordinates(coords, stride=20)]
             match algorithm:
                 case "A*":
                     start_time = time.time()

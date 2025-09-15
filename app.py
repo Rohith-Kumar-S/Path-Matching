@@ -14,7 +14,14 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import atexit
 from utils.algorithms_impl import AlgorithmsImpl
 from utils.graph_gen import GraphGenerator
+import logging
 
+# 1️⃣ Configure logging once, near the top of your script
+logging.basicConfig(
+    level=logging.INFO,                 # or DEBUG for more detail
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 st.set_page_config(page_title="Obstacle Detection", layout="wide")
 st.title("Path Matching")
 if "first_run" not in st.session_state:
@@ -143,7 +150,7 @@ class NumpyVideoStreamTrack(VideoStreamTrack):
             if self.last_frame is not None:
                 img = self.last_frame
             else:
-                img = np.ones((520, 1000, 3), dtype=np.uint8) * 255
+                img = np.ones(st.session_state.img_size, dtype=np.uint8) * 255
         frame = VideoFrame.from_ndarray(img, format="bgr24")
 
         # set pts/time_base for correct timing
@@ -208,6 +215,7 @@ def execute_algorithm():
             generated_graphs,
             source_coords=source_coords.copy(),
             target_coords=target_coords.copy(),
+            img_size = st.session_state.img_size,
             heuristic=st.session_state.heuristic,
         ).run(st.session_state.algorithm, st.session_state.matcher.lower())
     )
@@ -240,7 +248,8 @@ def execute_algorithm():
             st.session_state.img[y1:y2, x1:x2] = [255, 255, 0]
         draw_source_and_targets(draw_obstacle=False)
         frames.append(cv2.cvtColor(draw_grids(st.session_state.img.copy()), cv2.COLOR_BGR2RGB))
-    
+    logger.info("Action finished successfully")
+    logger.debug("Action finished successfully")
     st.session_state.frames = frames
     st.session_state.algorithm_executed = False
 
