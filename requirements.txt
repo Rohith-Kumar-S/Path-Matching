@@ -2,3 +2,4 @@ numpy
 opencv-python-headless
 scipy
 streamlit-webrtc
+streamlit_image_coordinates
