@@ -34,7 +34,7 @@ if "first_run" not in st.session_state:
 defaults = {
     "algo_executed": False,
     "execute": False,
-    "img_size": (500, 500, 3),
+    "img_size": (500, 600, 3),
     "source_coords": [],
     "search_coords": [],
     "target_coords": set(),
@@ -279,7 +279,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
     )
-col1, col2 = st.columns([5.5,2], vertical_alignment="top")
+col2, col1, col3 = st.columns([1.8,2.9,2], vertical_alignment="top")
 df = None
 with col2:
     with st.container():
@@ -342,14 +342,14 @@ with col2:
                 "Shortest Path Time (ms)": shortest_time
             })
             df.set_index("Sources", inplace=True)
-statusholder = st.empty()
+statusholder = col3.empty()
 statusholder.success("Enter Path Matching specifications and click Run")
 if "frames" in st.session_state and st.session_state.frames:
     statusholder.success("Press Start to start simulation")
 if df is not None:
-    st.subheader("Results")
-    st.write(df)
-    st.text_input("Bipartite Matching Time (ms)", value=f"{st.session_state.bipartite_matching_time*1000:.2f} ms")
+    col3.subheader("Results")
+    col3.write(df)
+    col3.text_input("Bipartite Matching Time (ms)", value=f"{st.session_state.bipartite_matching_time*1000:.2f} ms")
             
 def add_block():
     raw_value = st.session_state["click_coordinates"]
