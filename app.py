@@ -3,9 +3,6 @@ import streamlit as st
 import numpy as np
 import time
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import streamlit.components.v1 as components
 from streamlit_image_coordinates import streamlit_image_coordinates
 import asyncio
 import threading
