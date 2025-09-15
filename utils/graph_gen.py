@@ -1,9 +1,10 @@
 
 import utils.simple_graph_modified as gs
+import math
 
 class GraphGenerator:
-    
-    def __init__(self, img, kernel_size, stride):
+
+    def __init__(self, img=None, kernel_size=20, stride=20):
         self.img = img
         self.kernel_size = kernel_size
         self.stride = stride
@@ -13,6 +14,21 @@ class GraphGenerator:
         if node.sum() == 0:
             return True
         return False
+    
+    def find_blocks(self, x,y):
+        """find_blocks: finds the respective block in the image given the x and y coordinates
+
+        Args:
+            x: x coordinate
+            y: y coordinate
+            stride
+
+        Returns:
+            block coordinates
+        """
+        max_range_x = math.ceil(x/self.stride) * self.stride
+        max_range_y = math.ceil(y/self.stride) * self.stride
+        return max_range_y-self.stride, max_range_y, max_range_x-self.stride, max_range_x
 
     def block_position(self, id, total_columns):
         # if left or right boundary return an invalid id

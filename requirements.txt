@@ -1,5 +1,4 @@
 numpy
 opencv-python-headless
 scipy
-streamlit_image_coordinates
 streamlit-webrtc
