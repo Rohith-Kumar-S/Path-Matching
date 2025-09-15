@@ -34,7 +34,7 @@ if "first_run" not in st.session_state:
 defaults = {
     "algo_executed": False,
     "execute": False,
-    "img_size": (520, 1000, 3),
+    "img_size": (500, 500, 3),
     "source_coords": [],
     "search_coords": [],
     "target_coords": set(),
