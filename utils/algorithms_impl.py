@@ -1,5 +1,6 @@
 import heapq
 import numpy as np
+import time
 from scipy.optimize import linprog
 
 
@@ -23,6 +24,24 @@ class AlgorithmsImpl:
     
     def get_coordinate_midpoints(self, y1,y2, x1,x2):
         return (y1+y2)/2 , (x1+x2)/2
+    
+    def greedy_weighted_bipartite_matching(self, edges):
+        # edges = list of (u, v, w)
+        flattened_edges = []
+        for source_edges in edges:
+            flattened_edges.extend(source_edges)
+        flattened_edges.sort(key=lambda x: x[2])  # sort by weight
+        matched_U = set()
+        matched_V = set()
+        matching = {}
+
+        for u, v, w in flattened_edges:
+            if u not in matched_U and v not in matched_V:
+                matching[u] = v
+                matched_U.add(u)
+                matched_V.add(v)
+
+        return matching
     
     def get_heruistic_cost(self, source_coords, target_coords, heruistic = "euclidean"):
         heruistic_method = None
@@ -60,20 +79,18 @@ class AlgorithmsImpl:
             missing_targets = len(sources) - len(targets)
             for i in range(missing_targets):
                 missing_indices.add(len(targets)+i)
-                for row in distances:
-                    row.extend([1e6] * missing_targets)
+                for distance_row in distances:
+                    distance_row.append(('dummy_source','dummy_target', 1e6) * missing_targets)
 
         elif balance_condition == "source_imbalance":
             missing_sources = len(targets) - len(sources)
             for i in range(missing_sources):
                 missing_indices.add(len(sources)+i)
-                distances.append([1e6] * len(targets))
-      
+                distances.append(('dummy_source','dummy_target', 1e6) * missing_sources)
         c = []
-        for distance in distances:
-            c.extend(distance)
+        for distances_row in distances:
+            c.extend([d[-1] for d in distances_row])
         c = np.array(c)
-
         # Build constraints
         A_eq = []
         b_eq = []
@@ -97,13 +114,9 @@ class AlgorithmsImpl:
         A_eq = np.array(A_eq)
         b_eq = np.array(b_eq)
         bounds = np.array([(0, 1)]*len(c))
-        return c, A_eq, b_eq, bounds, sources, targets, balance_condition, missing_indices, max_len
+        return c, A_eq, b_eq, bounds, sources, missing_indices, max_len
 
-    def bipartite_linprog(self, c, A_eq, b_eq, bounds, sources, targets, balance_condition, missing_indices, max_len):
-        print("c:", c)
-        print("A_eq:\n", A_eq)
-        print("b_eq:", b_eq)
-        print("bounds:", bounds)
+    def bipartite_linprog(self, c, A_eq, b_eq, bounds, sources, missing_indices, max_len):
         result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
         
         matchings = {}
@@ -116,43 +129,55 @@ class AlgorithmsImpl:
         return matchings
                 
         
-    def find_distance(self, graph, target_coords):
+    def find_distance(self, graph, source_index, target_coords):
         distances = []
-        for coords in target_coords:
+        for target_index, coords in enumerate(target_coords):
             distance = 0
             index = self.get_index_from_coordinates(coords, stride=20, w=1000)
             node =  graph[index]
             while node.parent()!=-1 and node.parent() is not None:
                     node = node.parent()
                     distance+=1
-            distances.append(distance)
+            distances.append((source_index,target_index, distance))
         return distances
     
-    def run(self, algorithm = "astar"):
+    def run(self, algorithm = "astar", matcher="greedy"):
         match_found = False
         search_coords_total = []
         distance_by_source = []
+        matchings = None
+        shortest_path_time = []
+        bipartite_matching_time = 0
         for i, coords in enumerate(self.source_coords):
             graph = list(self.generated_graphs[i].values())
             source_block = graph[self.get_index_from_coordinates(coords, stride=20, w=1000)]
             match algorithm:
                 case "A*":
+                    start_time = time.time()
                     match_found, search_coords = self.a_star_explore(graph, source_block, self.target_coords.copy(), heuristic=self.heuristic.lower())
+                    shortest_path_time.append(time.time() - start_time)
                 case "Dijkstra":
+                    start_time = time.time()
                     match_found, search_coords = self.a_star_explore(graph, source_block, self.target_coords.copy(), include_heuristic=False)
+                    shortest_path_time.append(time.time() - start_time)
                 case "Breadth-First Search":
+                    start_time = time.time()
                     match_found, search_coords = self.bfs_explore(source_block, self.target_coords.copy())
-            print("match_found: ", match_found)
-            distance_by_source.append(self.find_distance(graph, self.target_coords))
+                    shortest_path_time.append(time.time() - start_time)
+            distance_by_source.append(self.find_distance(graph, coords, self.target_coords))
             search_coords_total.append(search_coords)
-        print("distance_by_source: ", distance_by_source)
-        matchings = self.bipartite_linprog(*self.build_linprog_params(self.source_coords, self.target_coords, distance_by_source))
-        print(matchings)
-        return match_found, search_coords_total, matchings
+        if matcher == "greedy":
+            start_time = time.time()
+            matchings = self.greedy_weighted_bipartite_matching(distance_by_source)
+            bipartite_matching_time += time.time() - start_time
+        else:
+            start_time = time.time()
+            matchings = self.bipartite_linprog(*self.build_linprog_params(self.source_coords, self.target_coords, distance_by_source))
+            bipartite_matching_time += time.time() - start_time
+        return match_found, search_coords_total, matchings, shortest_path_time, bipartite_matching_time
 
     def a_star_explore(self, graph, source_block, target_coords, include_heuristic=True, heuristic = "euclidean"):
         # target_coords = self.get_coordinate_midpoints(*target_coords)
-        print("heuristic: ", heuristic)
         matches = 0
         blocks_to_match = len(target_coords)
         for node in graph:
