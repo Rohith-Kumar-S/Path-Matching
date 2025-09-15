@@ -226,7 +226,8 @@ def execute_algorithm():
 
     colors = [[77, 168, 218], [128, 216, 195], [255, 214, 107]]
     frames = []
-
+    logger.info("Starting to append frames for visualization")
+    logger.debug("Starting to append frames for visualization")
     for i, searchcoords in enumerate(st.session_state.search_coords_total):
         for y1, y2, x1, x2 in searchcoords:
             st.session_state.img[y1:y2, x1:x2] = colors[i % 3]
