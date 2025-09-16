@@ -14,15 +14,9 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import atexit
 from utils.algorithms_impl import AlgorithmsImpl
 from utils.graph_gen import GraphGenerator
-import logging
+from utils.animation_component import AnimationComponent
 
-# 1️⃣ Configure logging once, near the top of your script
-logging.basicConfig(
-    level=logging.INFO,                 # or DEBUG for more detail
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logger = logging.getLogger(__name__)
-st.set_page_config(page_title="Obstacle Detection", layout="wide")
+st.set_page_config(page_title="Path Matching", layout="wide")
 st.title("Path Matching")
 if "first_run" not in st.session_state:
     st.cache_data.clear()
@@ -55,10 +49,10 @@ defaults = {
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
-    
-if "view_mode" in st.session_state and st.session_state.view_mode=="Animated":
-    stop_event = threading.Event()
-    
+
+if "stop_event" not in st.session_state:
+    st.session_state.stop_event = threading.Event()
+
 def initialize_image():
     obstacle_1 = np.ones(st.session_state.img_size, dtype=np.uint8) * 255
     if st.session_state.obstacle_map == "Sample":
@@ -100,76 +94,7 @@ def draw_grids(img):
     return img
 
 # If Animation is enabled
-frame_queue: "Queue[np.ndarray]" = Queue(maxsize=2)
-def producer(frames):
-    """Producer function that runs through frames once and stops"""
-    for img in frames:
-        # Check if we should stop early
-        if stop_event.is_set():
-            break
-            
-        # Remove old frame if queue is full
-        if frame_queue.full():
-            try:
-                frame_queue.get_nowait()
-            except:
-                pass
-                
-        # Add frame to queue
-        frame_queue.put(img)
-        time.sleep(1/50) 
-    # Keep the last frame displayed
-    if frames and not stop_event.is_set():
-        # Ensure the last frame stays in the queue
-        if frame_queue.full():
-            try:
-                frame_queue.get_nowait()
-            except:
-                pass
-        frame_queue.put(frames[-1])
-
-# --- custom aiortc VideoStreamTrack that yields frames from frame_queue ---
-class NumpyVideoStreamTrack(VideoStreamTrack):
-    def __init__(self, q: "Queue[np.ndarray]"):
-        super().__init__()  # important
-        self.q = q
-        self.last_frame = None
-
-    async def recv(self):
-        # get next numpy frame from queue without blocking the event loop
-
-        loop = asyncio.get_event_loop()
-        try:
-            img = await asyncio.wait_for(
-                loop.run_in_executor(None, self.q.get, True, 0.1),
-                timeout=0.5
-            )
-            self.last_frame = img
-        except (asyncio.TimeoutError, Exception):
-            # Use last frame if available, otherwise create blank frame
-            if self.last_frame is not None:
-                img = self.last_frame
-            else:
-                img = np.ones(st.session_state.img_size, dtype=np.uint8) * 255
-        frame = VideoFrame.from_ndarray(img, format="bgr24")
-
-        # set pts/time_base for correct timing
-        pts, time_base = await self.next_timestamp()
-        frame.pts = pts
-        frame.time_base = time_base
-        return frame
-
-# --- wrapper object streamlit-webrtc expects: has .video attribute ---
-class PlayerLike:
-    def __init__(self, video_track):
-        self.video = video_track
-        self.audio = None
-
-def player_factory():
-    # return the wrapper that contains our video track
-    return PlayerLike(NumpyVideoStreamTrack(frame_queue))
-
-
+animator = AnimationComponent(st.session_state.stop_event, st.session_state.img_size)
 
 def execute_algorithm():
     # put inside a class
@@ -226,8 +151,6 @@ def execute_algorithm():
 
     colors = [[77, 168, 218], [128, 216, 195], [255, 214, 107]]
     frames = []
-    logger.info("Starting to append frames for visualization")
-    logger.debug("Starting to append frames for visualization")
     for i, searchcoords in enumerate(st.session_state.search_coords_total):
         for y1, y2, x1, x2 in searchcoords:
             st.session_state.img[y1:y2, x1:x2] = colors[i % 3]
@@ -249,8 +172,6 @@ def execute_algorithm():
             st.session_state.img[y1:y2, x1:x2] = [255, 255, 0]
         draw_source_and_targets(draw_obstacle=False)
         frames.append(cv2.cvtColor(draw_grids(st.session_state.img.copy()), cv2.COLOR_BGR2RGB))
-    logger.info("Action finished successfully")
-    logger.debug("Action finished successfully")
     st.session_state.frames = frames
     st.session_state.algorithm_executed = False
 
@@ -258,16 +179,9 @@ def execute_algorithm():
 if st.session_state.execute:
     execute_algorithm()
 
-if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated":
-    if "animation_thread" in st.session_state and st.session_state.animation_thread:
-        stop_event.set()
-        if st.session_state.animation_thread.is_alive():
-            st.session_state.animation_thread.join(timeout=0.5)
-        stop_event.clear()
-    if len(st.session_state.frames)>0:
-        st.session_state.animation_thread = threading.Thread(target=producer, args=(st.session_state.frames,), daemon=True)
-        st.session_state.animation_thread.start()
-    
+if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
+        animator.start_animation(st.session_state.frames)
+
 st.markdown(
     """
     <style>
@@ -302,13 +216,7 @@ with col2:
             if "shortest_path_time" in st.session_state:
                 del st.session_state["shortest_path_time"]
             if "view_mode" in st.session_state and st.session_state.view_mode=="Animated":
-                stop_event.clear()
-                # Clear the frame queue
-                while not frame_queue.empty():
-                    try:
-                        frame_queue.get_nowait()
-                    except:
-                        break
+                animator.clear_frame_queue()
             st.cache_data.clear()
             st.cache_resource.clear()
             st.session_state.click_coords = {'sources': [], 'targets': [], 'obstacles': []}
@@ -382,11 +290,12 @@ with col1:
             webrtc_ctx = webrtc_streamer(
             key="server-dummy-recvonly",
             mode=WebRtcMode.RECVONLY,       # IMPORTANT: browser will not call getUserMedia
-            player_factory=player_factory, # returns object with .video attribute
+            player_factory=animator.player_factory, # returns object with .video attribute
             media_stream_constraints={"video": True, "audio": False},
             rtc_configuration={"iceServers":[{"urls":["stun:stun.l.google.com:19302"]}]},
         )
 
 if st.session_state.animation_thread is not None and st.session_state.view_mode=="Animated":
-    stop_event.set()
-    st.session_state.animation_thread.join()
+    # st.session_state.stop_event.set()
+    # st.session_state.animation_thread.join()
+    animator.stop_animation()
