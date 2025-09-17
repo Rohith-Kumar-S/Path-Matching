@@ -38,7 +38,7 @@ defaults = {
     "generated_graphs": [],
     "heuristic": "Manhattan",
     "matches": None,
-    "click_coords": {"sources": [], "targets": [], "obstacles": []},
+    "click_coords": {"sources": set(), "targets": set(), "obstacles": set()},
     "total_sources": 0,
     "total_targets": 0,
     "total_obstacles": 0,
@@ -47,7 +47,7 @@ defaults = {
     "obstacle_map": "Sample",
     "frames": [],
     "quick_view_frame":[],
-    "view_mode": "Quick",
+    "view_mode": "Quick"
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -75,7 +75,7 @@ animator = AnimationComponent(st.session_state.stop_event, st.session_state.img_
 # Execute the algorithm if requested
 if st.session_state.execute:
     try:
-        uiutils.execute_algorithm()
+        uiutils.execute_algorithm()  
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
         time.sleep(2)
@@ -87,7 +87,7 @@ if st.session_state.execute:
         
 
 if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
-        animator.start_animation(st.session_state.frames)
+    animator.start_animation(st.session_state.frames)
 
 # Disable image dragging
 st.markdown(
@@ -119,7 +119,7 @@ with col1:
         
         st.selectbox("Matcher", ["Greedy", "Linear Programming"], key="matcher")
         
-        c3, c4, c5 = st.columns([0.7,1, 2], vertical_alignment="top")
+        c3, c4, c5 = st.columns([0.7,1, 2.6], vertical_alignment="top")
         c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
         if c4.button("Reset"):
             uiutils.reset(st.cache_data, st.cache_resource, animator)
@@ -150,20 +150,19 @@ if "status" in st.session_state and st.session_state.status.startswith("Please")
     statusholder.warning(st.session_state.status)
 elif "frames" in st.session_state and st.session_state.frames:
     if st.session_state.view_mode=="Animated":
-        statusholder.success("Press start/stop button to control animation")
+        statusholder.success("Press start/stop button to control animation\n\n To restart animation, press stop and start again")
     elif st.session_state.view_mode=="Slider":
         statusholder.success("Use the slider to view different frames")
     else:
         statusholder.success("Click on the checkboxes in the results table to view paths")
 else:
-    statusholder.success("Enter Path Matching specifications and click Run")
+    statusholder.success("Insert blocks and click Run\n\n 🟥 Source 🟦 Target ⬛ Obstacle")
 
 if df is not None:
     col3.subheader("Results")
     edited_df = col3.data_editor(df,disabled=["Sources", "Shortest Path Time (ms)", "Path Matched"],
     hide_index=True,)
     sources_to_view = edited_df.loc[edited_df["View Path"]==True]["Sources"].values
-    print("sources_to_view: ", sources_to_view)
     if st.session_state.view_mode=="Quick" and len(st.session_state.frames)>0:
         st.session_state.quick_view_frame = uiutils.construct_quick_view_frame(sources_to_view)
 
@@ -196,7 +195,7 @@ with col2:
             webrtc_ctx = webrtc_streamer(
             key="server-dummy-recvonly",
             mode=WebRtcMode.RECVONLY,       
-            player_factory=animator.player_factory, 
+            player_factory=animator.player_factory,
             media_stream_constraints={"video": True, "audio": False},
             rtc_configuration={"iceServers":[{"urls":["stun:stun.l.google.com:19302"]}]},
         )

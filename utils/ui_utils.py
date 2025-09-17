@@ -64,14 +64,16 @@ class UIUtils:
         
         # Generate graph, source coords, target coords
         generated_graphs, source_coords, target_coords = [], [], []
+        sources = list(self.session_state.click_coords["sources"])
+        targets = list(self.session_state.click_coords["targets"])
 
         # Generate graph for each source and target
-        for coords in self.session_state.click_coords["sources"]:
+        for coords in sources:
             ret, blocks = _graph_gen.execute()
             if ret:
                 generated_graphs.append(blocks)
             source_coords.append(coords)
-        for coords in self.session_state.click_coords["targets"]:
+        for coords in targets:
             target_coords.append(coords)
 
         # Mark source and target nodes in the graphs
@@ -196,8 +198,7 @@ class UIUtils:
             animator.clear_frame_queue()
         cache_data.clear()
         cache_resource.clear()
-        self.session_state.click_coords = {'sources': [], 'targets': [], 'obstacles': []}
-        self.initialize_image()
+        self.session_state.click_coords = {'sources': set(), 'targets': set(), 'obstacles': set()}
         self.session_state.update({
             "execute": False,
             "configure_map": True,
@@ -215,6 +216,29 @@ class UIUtils:
         x, y = raw_value["x"], raw_value["y"]
         block_coords = GraphGenerator(stride=20).find_blocks(x, y)
         key_map = {"🟥 Source": "sources", "🟦 Target": "targets", "⬛ Obstacle": "obstacles"}
-        self.session_state.click_coords[key_map[self.session_state.blocktype]].append(block_coords)
+        
+        if block_coords in self.session_state.click_coords["sources"]:
+            self.session_state.click_coords["sources"].remove(block_coords)
+            self.session_state.total_sources -= 1
+            if key_map[self.session_state.blocktype] == "sources":
+                y1, y2, x1, x2 = block_coords
+                self.session_state.img[y1:y2, x1:x2] = [255, 255, 255]
+                return
+        elif block_coords in self.session_state.click_coords["targets"]:
+            self.session_state.click_coords["targets"].remove(block_coords)
+            self.session_state.total_targets -= 1
+            if key_map[self.session_state.blocktype] == "targets":
+                y1, y2, x1, x2 = block_coords
+                self.session_state.img[y1:y2, x1:x2] = [255, 255, 255]
+                return
+        elif block_coords in self.session_state.click_coords["obstacles"]:
+            self.session_state.click_coords["obstacles"].remove(block_coords)
+            self.session_state.total_obstacles -= 1
+            if key_map[self.session_state.blocktype] == "obstacles":
+                y1, y2, x1, x2 = block_coords
+                self.session_state.img[y1:y2, x1:x2] = [255, 255, 255]
+                return
+        
+        self.session_state.click_coords[key_map[self.session_state.blocktype]].add(block_coords)
 
 

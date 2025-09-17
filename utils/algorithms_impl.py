@@ -336,7 +336,6 @@ class AlgorithmsImpl:
                     # set the parent to p
                     node.setParent(p)
                     if node.isTarget() and node.get_coordinates() not in matched_targets:
-                        print("Found target node %d" % (node.id()))
                         matches+=1
                         matched_targets.add(node.get_coordinates())
                         # If the target is found, we can stop the search
