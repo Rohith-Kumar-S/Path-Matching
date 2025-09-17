@@ -246,7 +246,7 @@ class AlgorithmsImpl:
         source_block.setCost(0)
         if include_heuristic:
             source_block.setHeuristicCost(
-                self.get_heruistic_cost(source_block.get_coordinates(), target_coords, heuristic)
+                self.get_heuristic_cost(source_block.get_coordinates(), target_coords, heuristic)
             )
         # Add source to priority queue
         heapq.heappush(queue, (source_block.cost() + source_block.getHeuristicCost() if include_heuristic else source_block.cost(), source_block.id(), source_block))  # f = g + h
@@ -270,7 +270,7 @@ class AlgorithmsImpl:
 
             for neighbor in current.neighbors():
                 neighbor_coords = neighbor.get_coordinates()
-                known_cost = current.cost() + self.get_heruistic_cost(current_coords, [neighbor_coords], heuristic)
+                known_cost = current.cost() + self.get_heuristic_cost(current_coords, [neighbor_coords], heuristic)
 
                 # known_cost = current.cost() + self.euclidean_distance(*current_coords, *neighbor_coords, stride=20)
                 if not neighbor.visited() and known_cost < neighbor.cost():
@@ -278,10 +278,10 @@ class AlgorithmsImpl:
                     neighbor.setCost(known_cost)
                     neighbor.setParent(current)
                     if include_heuristic:
-                        heruistic_cost = self.get_heruistic_cost(neighbor_coords, target_coords, heuristic)
-                        # heruistic_cost = self.euclidean_distance(*neighbor_coords, *target_coords, stride=20)
-                        neighbor.setHeuristicCost(heruistic_cost)
-                        new_cost = known_cost + heruistic_cost
+                        heuristic_cost = self.get_heuristic_cost(neighbor_coords, target_coords, heuristic)
+                        # heuristic_cost = self.euclidean_distance(*neighbor_coords, *target_coords, stride=20)
+                        neighbor.setHeuristicCost(heuristic_cost)
+                        new_cost = known_cost + heuristic_cost
                     else:
                         new_cost = known_cost
                     
