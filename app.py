@@ -13,6 +13,7 @@ import threading
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from utils.animation_component import AnimationComponent
 from utils.ui_utils import UIUtils
+import time
 
 # --- main app ---
 st.set_page_config(page_title="Path Matching", layout="wide")
@@ -73,7 +74,17 @@ animator = AnimationComponent(st.session_state.stop_event, st.session_state.img_
 
 # Execute the algorithm if requested
 if st.session_state.execute:
-    uiutils.execute_algorithm()
+    try:
+        uiutils.execute_algorithm()
+    except MemoryError:
+        st.toast("Too Many Sources/Targets to process", icon="⚠️")
+        time.sleep(2)
+        uiutils.reset(st.cache_data, st.cache_resource, animator)
+    except Exception as e:
+        st.toast(f"Error: {e}", icon="⚠️")
+        time.sleep(2)
+        uiutils.reset(st.cache_data, st.cache_resource, animator)
+        
 
 if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
         animator.start_animation(st.session_state.frames)
