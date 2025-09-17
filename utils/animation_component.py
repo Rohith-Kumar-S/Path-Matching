@@ -1,3 +1,10 @@
+"""
+    Rohith kumar Senthil kumar
+    09/04/2025
+    Animation component for path matching visualization
+"""
+
+# --- imports ---
 import asyncio
 import time
 from queue import Queue
@@ -7,7 +14,9 @@ from aiortc import VideoStreamTrack
 import threading
 
 
+# --- main AnimationComponent class ---
 class AnimationComponent:
+    """Manages animation thread and frame queue for streaming video."""
     def __init__(self, stop_event, img_size):
         self.frame_queue: "Queue[np.ndarray]" = Queue(maxsize=2)
         self.stop_event = stop_event
@@ -15,9 +24,11 @@ class AnimationComponent:
         self.animation_thread = None
         
     def get_frame_queue(self):
+        """Accessor for frame queue."""
         return self.frame_queue
     
     def clear_frame_queue(self):
+        """Clear all frames from the queue."""
         self.stop_event.clear()
         while not self.frame_queue.empty():
             try:
@@ -26,7 +37,7 @@ class AnimationComponent:
                 break
     
     def start_animation(self, frames=None):
-        
+        """Start animation thread if not already running."""
         # Stop any existing animation thread
         self.stop_animation()
         if self.animation_thread is None:
@@ -34,6 +45,7 @@ class AnimationComponent:
             self.animation_thread.start()
             
     def stop_animation(self):
+        """Stop animation thread if running."""
         if self.animation_thread is not None:
             self.stop_event.set()
             if self.animation_thread.is_alive():
@@ -41,6 +53,7 @@ class AnimationComponent:
             self.animation_thread = None
 
     def player_factory(self):
+        """Factory function to create PlayerLike object for webrtc_streamer."""
         # return the wrapper that contains our video track
         return PlayerLike(NumpyVideoStreamTrack(self.frame_queue))
     def producer(self, frames): 
@@ -72,16 +85,18 @@ class AnimationComponent:
 
 # --- custom aiortc VideoStreamTrack that yields frames from frame_queue ---
 class NumpyVideoStreamTrack(VideoStreamTrack):
+    """A VideoStreamTrack that returns frames from a Queue of numpy arrays."""
     def __init__(self, q: "Queue[np.ndarray]"):
         super().__init__()  # important
         self.q = q
         self.last_frame = None
 
     async def recv(self):
+        """Receive the next video frame."""
         # get next numpy frame from queue without blocking the event loop
-
         loop = asyncio.get_event_loop()
         try:
+            # get next numpy frame from queue, timeout if none available
             img = await asyncio.wait_for(
                 loop.run_in_executor(None, self.q.get, True, 0.1),
                 timeout=0.5
@@ -93,6 +108,8 @@ class NumpyVideoStreamTrack(VideoStreamTrack):
                 img = self.last_frame
             else:
                 img = np.ones(self.img_size, dtype=np.uint8) * 255
+        
+        # convert numpy array (H, W, C) to av.VideoFrame
         frame = VideoFrame.from_ndarray(img, format="bgr24")
 
         # set pts/time_base for correct timing
@@ -103,6 +120,7 @@ class NumpyVideoStreamTrack(VideoStreamTrack):
 
 # --- wrapper object streamlit-webrtc expects: has .video attribute ---
 class PlayerLike:
+    """A simple wrapper class that has a .video attribute for webrtc_streamer."""
     def __init__(self, video_track):
         self.video = video_track
         self.audio = None
