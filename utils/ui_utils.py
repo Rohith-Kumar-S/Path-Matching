@@ -178,13 +178,12 @@ class UIUtils:
             ).run(self.session_state.algorithm, self.session_state.matcher.lower())
         )
 
-        self.session_state.algorithm_executed = True
         self.session_state.execute = False
         self.session_state.configure_map = False
         self.session_state.frames = self.construct_frames(
             source_coords, target_coords, generated_graphs
         )
-        self.session_state.algorithm_executed = False
+        self.session_state.allow_animation = True
         
     def reset(self, cache_data, cache_resource, animator):
         """reset: resets the application state"""

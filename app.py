@@ -47,7 +47,9 @@ defaults = {
     "obstacle_map": "Sample",
     "frames": [],
     "quick_view_frame":[],
-    "view_mode": "Quick"
+    "view_mode": "Quick",
+    "animation_running": False,
+    "allow_animation": False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -68,26 +70,39 @@ uiutils = UIUtils(
 if "img" not in st.session_state:
     uiutils.initialize_image()
 
-
-# If Animation is enabled
-animator = AnimationComponent(st.session_state.stop_event, st.session_state.img_size)
+# if animation is enabled, initialize animator
+if "animator" not in st.session_state:
+    st.session_state.animator =  AnimationComponent(st.session_state.stop_event, st.session_state.img_size)
 
 # Execute the algorithm if requested
 if st.session_state.execute:
     try:
-        uiutils.execute_algorithm()  
+        uiutils.execute_algorithm()
+        if st.session_state.animation_running:
+            st.session_state.animator.stop_animation()
+            st.session_state.animator.clear_frame_queue()
+            st.session_state.animation_running = False  
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
         time.sleep(2)
-        uiutils.reset(st.cache_data, st.cache_resource, animator)
+        uiutils.reset(st.cache_data, st.cache_resource, st.session_state.animator)
     except Exception as e:
         st.toast(f"Error: {e}", icon="⚠️")
         time.sleep(2)
-        uiutils.reset(st.cache_data, st.cache_resource, animator)
-        
+        uiutils.reset(st.cache_data, st.cache_resource, st.session_state.animator)
+
 
 if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
-    animator.start_animation(st.session_state.frames)
+    if not st.session_state.animation_running and st.session_state.allow_animation: 
+        print("Starting animation")
+        st.session_state.animator.start_animation(st.session_state.frames)
+        st.session_state.animation_running = True
+        st.session_state.allow_animation = False
+elif st.session_state.animation_running:
+    st.session_state.animator.stop_animation()
+    st.session_state.animator.clear_frame_queue()
+    st.session_state.animation_running = False
+print("Animation running:", st.session_state.animation_running, st.session_state.allow_animation)
 
 # Disable image dragging
 st.markdown(
@@ -122,7 +137,7 @@ with col1:
         c3, c4, c5 = st.columns([0.7,1, 2.6], vertical_alignment="top")
         c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
         if c4.button("Reset"):
-            uiutils.reset(st.cache_data, st.cache_resource, animator)
+            uiutils.reset(st.cache_data, st.cache_resource, st.session_state.animator)
         if len(st.session_state.frames) > 0 and st.session_state.view_mode=="Slider":
             st.session_state.frame_index = slider_placeholder.slider(
             "Select frame", 0, len(st.session_state.frames) - 1, 0
@@ -150,7 +165,7 @@ if "status" in st.session_state and st.session_state.status.startswith("Please")
     statusholder.warning(st.session_state.status)
 elif "frames" in st.session_state and st.session_state.frames:
     if st.session_state.view_mode=="Animated":
-        statusholder.success("Press start/stop button to control animation\n\n To restart animation, press stop and start again")
+        statusholder.success("Experimental Feature(Unstable) \n\n Press Run to start animation")
     elif st.session_state.view_mode=="Slider":
         statusholder.success("Use the slider to view different frames")
     else:
@@ -190,18 +205,28 @@ with col2:
 
     if len(st.session_state.frames) > 0 and "view_mode" in st.session_state:
         if st.session_state.view_mode=="Slider":
+            if st.session_state.animation_running:
+                st.session_state.animator.stop_animation()
+                st.session_state.animator.clear_frame_queue()
+                st.session_state.animation_running = False
             st.image(cv2.cvtColor(fetch_frame(st.session_state.frame_index), cv2.COLOR_BGR2RGB))
         elif st.session_state.view_mode=="Animated":
+            print("Rendering animated view: ", st.session_state.animation_running)
             webrtc_ctx = webrtc_streamer(
             key="server-dummy-recvonly",
-            mode=WebRtcMode.RECVONLY,       
-            player_factory=animator.player_factory,
+            mode=WebRtcMode.RECVONLY,
+            player_factory=st.session_state.animator.player_factory,
+            desired_playing_state=st.session_state.animation_running,
             media_stream_constraints={"video": True, "audio": False},
             rtc_configuration={"iceServers":[{"urls":["stun:stun.l.google.com:19302"]}]},
         )
-        else: # Quick view
+        elif st.session_state.view_mode=="Quick": # Quick view
+            if st.session_state.animation_running:
+                st.session_state.animator.stop_animation()
+                st.session_state.animator.clear_frame_queue()
+                st.session_state.animation_running = False
             st.image(cv2.cvtColor(st.session_state.quick_view_frame, cv2.COLOR_BGR2RGB))
-
+# st.session_state.execute = False
 # Stop animation thread if view mode changed or app is reset
 if st.session_state.animation_thread is not None and st.session_state.view_mode=="Animated":
-    animator.stop_animation()
+    st.session_state.animator.stop_animation()

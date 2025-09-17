@@ -40,6 +40,7 @@ class AnimationComponent:
     def start_animation(self, frames=None):
         """Start animation thread if not already running."""
         # Stop any existing animation thread
+        self.stop_animation()
         if self.animation_thread is None:
             self.animation_thread = threading.Thread(target=self.producer, args=(frames,), daemon=True)
             self.animation_thread.start()
