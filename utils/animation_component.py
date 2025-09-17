@@ -44,13 +44,10 @@ class AnimationComponent:
         if self.animation_thread is None:
             self.animation_thread = threading.Thread(target=self.producer, args=(frames,), daemon=True)
             self.animation_thread.start()
-            print("Started animation thread")
             
     def stop_animation(self):
         """Stop animation thread if running."""
-        print("Stopping animation if running", self.animation_thread is not None)
         if self.animation_thread is not None:
-            print("Stopping animation thread")
             self.stop_event.set()
             if self.animation_thread.is_alive():
                 self.animation_thread.join(timeout=0.5)

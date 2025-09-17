@@ -94,7 +94,6 @@ if st.session_state.execute:
 
 if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
     if not st.session_state.animation_running and st.session_state.allow_animation: 
-        print("Starting animation")
         st.session_state.animator.start_animation(st.session_state.frames)
         st.session_state.animation_running = True
         st.session_state.allow_animation = False
@@ -102,7 +101,6 @@ elif st.session_state.animation_running:
     st.session_state.animator.stop_animation()
     st.session_state.animator.clear_frame_queue()
     st.session_state.animation_running = False
-print("Animation running:", st.session_state.animation_running, st.session_state.allow_animation)
 
 # Disable image dragging
 st.markdown(
@@ -211,7 +209,6 @@ with col2:
                 st.session_state.animation_running = False
             st.image(cv2.cvtColor(fetch_frame(st.session_state.frame_index), cv2.COLOR_BGR2RGB))
         elif st.session_state.view_mode=="Animated":
-            print("Rendering animated view: ", st.session_state.animation_running)
             webrtc_ctx = webrtc_streamer(
             key="server-dummy-recvonly",
             mode=WebRtcMode.RECVONLY,
