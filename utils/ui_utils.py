@@ -5,7 +5,6 @@
 """
 
 # --- imports ---
-from turtle import st
 import numpy as np
 import cv2
 from utils.graph_gen import GraphGenerator
