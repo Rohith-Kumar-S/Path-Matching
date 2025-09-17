@@ -185,16 +185,19 @@ class UIUtils:
         )
         self.session_state.allow_animation = True
         
-    def reset(self, cache_data, cache_resource, animator):
+    def reset(self, cache_data, cache_resource):
         """reset: resets the application state"""
         
         if "frame_index" in self.session_state:
             del self.session_state["frame_index"]
         if "shortest_path_time" in self.session_state:
             del self.session_state["shortest_path_time"]
-        if "view_mode" in self.session_state and self.session_state.view_mode=="Animated":
-            animator.stop_animation()
-            animator.clear_frame_queue()
+        if "animator" in self.session_state:
+            self.session_state.animator.stop_animation()
+            self.session_state.animator.clear_frame_queue()
+            del self.session_state["animator"]
+        self.session_state.allow_animation = False
+        self.session_state.animation_running = False
         cache_data.clear()
         cache_resource.clear()
         self.session_state.click_coords = {'sources': set(), 'targets': set(), 'obstacles': set()}
