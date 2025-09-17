@@ -89,6 +89,11 @@ if st.session_state.execute:
             }
         )
         uiutils.execute_algorithm()
+        st.session_state.update(
+            {
+                "click_coords": {"sources": set(), "targets": set(), "obstacles": set()}
+            }
+        )
         if st.session_state.animation_running:
             st.session_state.animator.stop_animation()
             st.session_state.animator.clear_frame_queue()
