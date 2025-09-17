@@ -89,11 +89,6 @@ if st.session_state.execute:
             }
         )
         uiutils.execute_algorithm()
-        st.session_state.update(
-            {
-                "click_coords": {"sources": set(), "targets": set(), "obstacles": set()}
-            }
-        )
         if st.session_state.animation_running:
             st.session_state.animator.stop_animation()
             st.session_state.animator.clear_frame_queue()
@@ -238,7 +233,7 @@ with col2:
                 st.session_state.animator.clear_frame_queue()
                 st.session_state.animation_running = False
             st.image(cv2.cvtColor(st.session_state.quick_view_frame, cv2.COLOR_BGR2RGB))
-# st.session_state.execute = False
+
 # Stop animation thread if view mode changed or app is reset
 if st.session_state.animation_thread is not None and st.session_state.view_mode=="Animated":
     st.session_state.animator.stop_animation()
