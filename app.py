@@ -133,7 +133,8 @@ with col1:
         
         c3, c4, c5 = st.columns([0.7,1, 2.6], vertical_alignment="top")
         c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
-        # c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource))
+        if c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource)):
+            st.rerun()
         if len(st.session_state.frames) > 0 and st.session_state.view_mode=="Slider":
             st.session_state.frame_index = slider_placeholder.slider(
             "Select frame", 0, len(st.session_state.frames) - 1, 0

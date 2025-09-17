@@ -5,10 +5,12 @@
 """
 
 # --- imports ---
+from turtle import st
 import numpy as np
 import cv2
 from utils.graph_gen import GraphGenerator
 from utils.algorithms_impl import AlgorithmsImpl
+import streamlit as st
 
 # --- main UIUtils class ---
 class UIUtils:
@@ -187,30 +189,13 @@ class UIUtils:
         
     def reset(self, cache_data, cache_resource):
         """reset: resets the application state"""
-        
-        if "frame_index" in self.session_state:
-            del self.session_state["frame_index"]
-        if "shortest_path_time" in self.session_state:
-            del self.session_state["shortest_path_time"]
         if "animator" in self.session_state:
             self.session_state.animator.stop_animation()
             self.session_state.animator.clear_frame_queue()
             del self.session_state["animator"]
-        self.session_state.allow_animation = False
-        self.session_state.animation_running = False
         cache_data.clear()
         cache_resource.clear()
-        self.session_state.click_coords = {'sources': set(), 'targets': set(), 'obstacles': set()}
-        self.session_state.update({
-            "execute": False,
-            "configure_map": True,
-            "algorithm_executed": False,
-            "frames": [],
-            "total_sources": 0,
-            "total_targets": 0,
-            "total_obstacles": 0
-        })
-        self.initialize_image()
+        st.session_state.clear()
         
     def add_block(self):
         """add_block: adds a block to the click coordinates based on the selected block type"""
