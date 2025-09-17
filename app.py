@@ -59,7 +59,7 @@ if "stop_event" not in st.session_state:
     st.session_state.stop_event = threading.Event()
     
 # Layout setup
-col1, col2, col3 = st.columns([1.8,2.5,2], vertical_alignment="top")
+col1, col2, col3 = st.columns([1.8,2.6,2], vertical_alignment="top")
 df = None
 
 # Initialize UIUtils
