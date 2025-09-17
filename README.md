@@ -75,6 +75,7 @@ The application will open in your default web browser at `http://localhost:8501`
 ### 2. **Place Sources and Targets**
    - Click on the grid to place sources (displayed in **red**)
    - Click to place targets (displayed in **blue**)
+   - Click to place obstacles (displayed in **black**)
    - Support for multiple sources and targets
 
 ### 3. **Algorithm Selection**
@@ -101,35 +102,33 @@ The application will open in your default web browser at `http://localhost:8501`
 ## Algorithm Details
 
 ### Pathfinding Algorithms
-
+For m sources and n targets
 #### **Dijkstra's Algorithm**
-- Guarantees shortest path in weighted graphs
-- Explores nodes in order of distance from source
-- Time Complexity: O((V + E) log V)
+- Time Complexity(Implemented): O(m.(V + E·log E))
 
 #### **A* Search**
-- Uses heuristic to guide search toward target
 - Faster than Dijkstra for single target
 - Heuristic options:
   - **Manhattan**: |x₁-x₂| + |y₁-y₂| 
   - **Euclidean**: √((x₁-x₂)² + (y₁-y₂)²)
+- Time Complexity (Implemented): O(m.(V + E·log(E) + E·T))
 
 #### **Breadth-First Search (BFS)**
 - Optimal for unweighted graphs
 - Explores level by level
-- Time Complexity: O(V + E)
+- Time Complexity(Implemented): O(m · (V + E))
 
 ### Bipartite Matching
 
 #### **Linear Programming**
 - Finds globally optimal assignment
 - Minimizes total distance across all assignments
-- Time Complexity: O(n³)
+- Time Complexity: O((mn)³)
 
 #### **Greedy Algorithm**
 - Assigns each source to nearest available target
 - Faster but potentially suboptimal
-- Time Complexity: O(n² log n)
+- Time Complexity: O(mn·log(mn))
 
 ## Applications
 
