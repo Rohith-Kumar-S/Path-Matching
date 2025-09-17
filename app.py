@@ -77,6 +77,17 @@ if "animator" not in st.session_state:
 # Execute the algorithm if requested
 if st.session_state.execute:
     try:
+        # Reset relevant session state variables
+        st.session_state.update(
+            {
+                "graph_generator": None,
+                "source_coords": [],
+                "generated_graphs": [],
+                "target_coords": [],
+                "frames": [],
+                "quick_view_frame": [],
+            }
+        )
         uiutils.execute_algorithm()
         if st.session_state.animation_running:
             st.session_state.animator.stop_animation()
