@@ -143,7 +143,7 @@ with col1:
         st.selectbox("Matcher", ["Greedy", "Linear Programming"], key="matcher")
         
         c3, c4, c5 = st.columns([0.7,1, 2.5], vertical_alignment="top")
-        c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
+        c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}), disabled=st.session_state.animation_running)
         if c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource)):
             st.rerun()
         if len(st.session_state.frames) > 0 and st.session_state.view_mode=="Slider":
