@@ -28,7 +28,7 @@ if "first_run" not in st.session_state:
 
 # Initialize required session_state keys
 defaults = {
-    "algo_executed": False,
+    "algorithm_executed": False,
     "execute": False,
     "img_size": (500, 600, 3),
     "source_coords": [],
@@ -46,7 +46,7 @@ defaults = {
     "configure_map": True,
     "obstacle_map": "Sample",
     "frames": [],
-    "quick_view_frame":[],
+    "quick_view_frame":None,
     "view_mode": "Quick",
     "animation_running": False,
     "allow_animation": False,
@@ -77,6 +77,7 @@ if "animator" not in st.session_state:
 # Execute the algorithm if requested
 if st.session_state.execute:
     try:
+        st.session_state.algorithm_executed = False
         # Reset relevant session state variables
         st.session_state.update(
             {
@@ -85,10 +86,9 @@ if st.session_state.execute:
                 "generated_graphs": [],
                 "target_coords": [],
                 "frames": [],
-                "quick_view_frame": [],
             }
         )
-        uiutils.execute_algorithm()
+        uiutils.execute_algorithm(st.session_state.view_mode)
         if st.session_state.animation_running:
             st.session_state.animator.stop_animation()
             st.session_state.animator.clear_frame_queue()
@@ -142,7 +142,7 @@ with col1:
         
         st.selectbox("Matcher", ["Greedy", "Linear Programming"], key="matcher")
         
-        c3, c4, c5 = st.columns([0.7,1, 2.6], vertical_alignment="top")
+        c3, c4, c5 = st.columns([0.7,1, 2.5], vertical_alignment="top")
         c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
         if c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource)):
             st.rerun()
@@ -159,7 +159,7 @@ with col1:
                metrics.append(i+1)
                shortest_time.append(f"{st.session_state.shortest_path_time[i]*1000:.2f} ms")
                view_path.append(True)
-               path_matched.append(True)
+               path_matched.append(True if source in st.session_state.matches else False)
             df = pd.DataFrame({
                 "Sources": metrics,
                 "Shortest Path Time (ms)": shortest_time,
@@ -186,7 +186,7 @@ if df is not None:
     edited_df = col3.data_editor(df,disabled=["Sources", "Shortest Path Time (ms)", "Path Matched"],
     hide_index=True,)
     sources_to_view = edited_df.loc[edited_df["View Path"]==True]["Sources"].values
-    if st.session_state.view_mode=="Quick" and len(st.session_state.frames)>0:
+    if st.session_state.view_mode=="Quick" and st.session_state.algorithm_executed:
         st.session_state.quick_view_frame = uiutils.construct_quick_view_frame(sources_to_view)
 
     col3.text_input("Bipartite Matching Time (ms)", value=f"{st.session_state.bipartite_matching_time*1000:.2f} ms")
@@ -211,14 +211,14 @@ with col2:
     if st.session_state.configure_map:
         coords = streamlit_image_coordinates(uiutils.draw_grids(st.session_state.img.copy()), key="click_coordinates", on_click=uiutils.add_block)
 
-    if len(st.session_state.frames) > 0 and "view_mode" in st.session_state:
-        if st.session_state.view_mode=="Slider":
+    if "view_mode" in st.session_state:
+        if len(st.session_state.frames) > 0 and st.session_state.view_mode=="Slider":
             if st.session_state.animation_running:
                 st.session_state.animator.stop_animation()
                 st.session_state.animator.clear_frame_queue()
                 st.session_state.animation_running = False
             st.image(cv2.cvtColor(fetch_frame(st.session_state.frame_index), cv2.COLOR_BGR2RGB))
-        elif st.session_state.view_mode=="Animated":
+        elif len(st.session_state.frames) > 0 and st.session_state.view_mode=="Animated":
             webrtc_ctx = webrtc_streamer(
             key="server-dummy-recvonly",
             mode=WebRtcMode.RECVONLY,
@@ -227,7 +227,7 @@ with col2:
             media_stream_constraints={"video": True, "audio": False},
             rtc_configuration={"iceServers":[{"urls":["stun:stun.l.google.com:19302"]}]},
         )
-        elif st.session_state.view_mode=="Quick": # Quick view
+        elif st.session_state.quick_view_frame is not None: # Quick view
             if st.session_state.animation_running:
                 st.session_state.animator.stop_animation()
                 st.session_state.animator.clear_frame_queue()

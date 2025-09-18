@@ -106,8 +106,6 @@ class UIUtils:
                 frames.append(cv2.cvtColor(self.draw_grids(img.copy()), cv2.COLOR_BGR2RGB))
             self.draw_source_and_targets(img, draw_obstacle=False)
             frames.append(cv2.cvtColor(self.draw_grids(img.copy()), cv2.COLOR_BGR2RGB))
-            logger.debug(f"Constructed frames for source {i+1}")
-            logger.info(f"Constructed frames for source {i+1}")
 
         # Draw paths for each source to its matched target
         for i, coords in enumerate(source_coords):
@@ -162,9 +160,11 @@ class UIUtils:
         self.session_state.status = "Ready to execute."
         return True
     
-    def execute_algorithm(self):
+    def execute_algorithm(self, view_mode=None):
         """execute_algorithm: executes the selected path matching algorithm"""
         if not self.validate_source_target():
+            return
+        if not self.validate_run():
             return
         self.initialize_image()
         _graph_gen, generated_graphs, source_coords, target_coords = self.generate_graphs()
@@ -190,14 +190,19 @@ class UIUtils:
 
         self.session_state.execute = False
         self.session_state.configure_map = False
-        logger.debug("Constructing frames")
-        logger.info("Constructing frames")
-        self.session_state.frames = self.construct_frames(
-            source_coords, target_coords, generated_graphs
-        )
-        self.session_state.allow_animation = True
-        logger.debug("Constructed frames and executed algorithm")
-        logger.info("Constructed frames and executed algorithm")
+        if view_mode != "Quick":
+            self.session_state.frames = self.construct_frames(
+                source_coords, target_coords, generated_graphs
+            )
+            self.session_state.allow_animation = True
+        self.session_state.algorithm_executed = True
+        
+    def validate_run(self):
+        if self.session_state.view_mode!="Quick" and (len(self.session_state.click_coords["sources"])>3 or len(self.session_state.click_coords["targets"])>3):
+            self.session_state.status = "Please use Quick view for 4 or more sources or targets."
+            self.session_state.execute = False
+            return False
+        return True
         
     def reset(self, cache_data, cache_resource):
         """reset: resets the application state"""
