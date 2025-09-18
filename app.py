@@ -96,11 +96,11 @@ if st.session_state.execute:
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
         time.sleep(2)
-        uiutils.reset(st.cache_data, st.cache_resource, st.session_state.animator)
+        uiutils.reset(st.cache_data, st.cache_resource)
     except Exception as e:
         st.toast(f"Error: {e}", icon="⚠️")
         time.sleep(2)
-        uiutils.reset(st.cache_data, st.cache_resource, st.session_state.animator)
+        uiutils.reset(st.cache_data, st.cache_resource)
 
 if  "view_mode" in st.session_state and st.session_state.view_mode=="Animated" and len(st.session_state.frames)>0:
     if not st.session_state.animation_running and st.session_state.allow_animation:

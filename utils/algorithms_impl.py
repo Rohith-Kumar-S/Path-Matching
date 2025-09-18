@@ -176,6 +176,8 @@ class AlgorithmsImpl:
             while node.parent()!=-1 and node.parent() is not None:
                     node = node.parent()
                     distance+=1
+            if distance==0:
+                distance = float("inf")
             distances.append((source_index, target_idx, distance))
         return distances
     
@@ -209,7 +211,6 @@ class AlgorithmsImpl:
                     shortest_path_time.append(time.time() - start_time)
             distance_by_source.append(self.find_distance(graph, coords, self.target_coords))
             search_coords_total.append(search_coords)
-            
         # run the selected matching algorithm
         if matcher == "greedy":
             start_time = time.time()
