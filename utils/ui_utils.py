@@ -106,6 +106,8 @@ class UIUtils:
                 frames.append(cv2.cvtColor(self.draw_grids(img.copy()), cv2.COLOR_BGR2RGB))
             self.draw_source_and_targets(img, draw_obstacle=False)
             frames.append(cv2.cvtColor(self.draw_grids(img.copy()), cv2.COLOR_BGR2RGB))
+            logger.debug(f"Constructed frames for source {i+1}")
+            logger.info(f"Constructed frames for source {i+1}")
 
         # Draw paths for each source to its matched target
         for i, coords in enumerate(source_coords):
