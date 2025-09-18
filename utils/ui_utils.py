@@ -10,6 +10,13 @@ import cv2
 from utils.graph_gen import GraphGenerator
 from utils.algorithms_impl import AlgorithmsImpl
 import streamlit as st
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,                 # or DEBUG for more detail
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # --- main UIUtils class ---
 class UIUtils:
@@ -181,10 +188,14 @@ class UIUtils:
 
         self.session_state.execute = False
         self.session_state.configure_map = False
+        logger.debug("Constructing frames")
+        logger.info("Constructing frames")
         self.session_state.frames = self.construct_frames(
             source_coords, target_coords, generated_graphs
         )
         self.session_state.allow_animation = True
+        logger.debug("Constructed frames and executed algorithm")
+        logger.info("Constructed frames and executed algorithm")
         
     def reset(self, cache_data, cache_resource):
         """reset: resets the application state"""
