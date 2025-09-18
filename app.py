@@ -153,17 +153,15 @@ with col1:
         if "shortest_path_time" in st.session_state and "bipartite_matching_time" in st.session_state:
             metrics = []
             shortest_time = []
-            path_matched = []
             view_path = []
             for i, source in enumerate(st.session_state.source_coords):
                metrics.append(i+1)
                shortest_time.append(f"{st.session_state.shortest_path_time[i]*1000:.2f} ms")
                view_path.append(True)
-               path_matched.append(True if source in st.session_state.matches else False)
+
             df = pd.DataFrame({
                 "Sources": metrics,
                 "Shortest Path Time (ms)": shortest_time,
-                "Path Matched": path_matched,
                 "View Path": view_path
             })
 
