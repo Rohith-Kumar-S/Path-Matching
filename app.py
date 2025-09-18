@@ -88,11 +88,11 @@ if st.session_state.execute:
                 "frames": [],
             }
         )
-        uiutils.execute_algorithm(st.session_state.view_mode)
         if st.session_state.animation_running:
             st.session_state.animator.stop_animation()
             st.session_state.animator.clear_frame_queue()
             st.session_state.animation_running = False  
+        uiutils.execute_algorithm(st.session_state.view_mode)
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
         time.sleep(2)

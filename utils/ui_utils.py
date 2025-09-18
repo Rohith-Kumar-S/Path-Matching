@@ -198,6 +198,10 @@ class UIUtils:
         self.session_state.algorithm_executed = True
         
     def validate_run(self):
+        if self.session_state.animation_running:
+            self.session_state.status = "Animation is running. Please wait or switch to a different view mode."
+            self.session_state.execute = False
+            return False
         if self.session_state.view_mode!="Quick" and (len(self.session_state.click_coords["sources"])>3 or len(self.session_state.click_coords["targets"])>3):
             self.session_state.status = "Please use Quick view for 4 or more sources or targets."
             self.session_state.execute = False
