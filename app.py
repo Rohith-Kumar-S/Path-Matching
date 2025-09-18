@@ -169,7 +169,7 @@ with col1:
 statusholder = col3.empty()
 if "status" in st.session_state and st.session_state.status.startswith("Please"):
     statusholder.warning(st.session_state.status)
-elif "frames" in st.session_state and st.session_state.frames:
+elif "frames" in st.session_state and st.session_state.frames or st.session_state.quick_view_frame is not None:
     if st.session_state.view_mode=="Animated":
         statusholder.success("Experimental Feature(Unstable) \n\n Press Run to start animation")
     elif st.session_state.view_mode=="Slider":
