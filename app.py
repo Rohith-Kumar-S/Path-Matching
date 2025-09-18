@@ -130,7 +130,7 @@ with col1:
     with st.container():
         options = ["Quick", "Slider", "Animated"]
         st.segmented_control(
-                "View Mode",  options=options, selection_mode="single", key="view_mode"
+                "View Mode",  options=options, selection_mode="single", key="view_mode", disabled=st.session_state.animation_running
             )
         slider_placeholder = st.empty()
         c1,c2 = st.columns(2, vertical_alignment="top")
