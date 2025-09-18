@@ -163,9 +163,9 @@ class UIUtils:
     def execute_algorithm(self, view_mode=None):
         """execute_algorithm: executes the selected path matching algorithm"""
         if not self.validate_source_target():
-            return
+            return False
         if not self.validate_run():
-            return
+            return False
         self.initialize_image()
         _graph_gen, generated_graphs, source_coords, target_coords = self.generate_graphs()
         self.session_state.update(
@@ -196,12 +196,9 @@ class UIUtils:
             )
             self.session_state.allow_animation = True
         self.session_state.algorithm_executed = True
+        return True
         
     def validate_run(self):
-        if self.session_state.animation_running:
-            self.session_state.status = "Animation is running. Please wait or switch to a different view mode."
-            self.session_state.execute = False
-            return False
         if self.session_state.view_mode!="Quick" and (len(self.session_state.click_coords["sources"])>3 or len(self.session_state.click_coords["targets"])>3):
             self.session_state.status = "Please use Quick view for 4 or more sources or targets."
             self.session_state.execute = False

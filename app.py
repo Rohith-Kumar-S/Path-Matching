@@ -77,11 +77,8 @@ if "animator" not in st.session_state:
 # Execute the algorithm if requested
 if st.session_state.execute:
     try:
+        
         st.session_state.algorithm_executed = False
-        if st.session_state.animation_running:
-            st.session_state.animator.stop_animation()
-            st.session_state.animator.clear_frame_queue()
-            st.session_state.animation_running = False
         # Reset relevant session state variables
         st.session_state.update(
             {
@@ -91,7 +88,11 @@ if st.session_state.execute:
                 "target_coords": [],
                 "frames": [],
             }
-        )  
+        ) 
+        if st.session_state.animation_running:
+            st.session_state.animator.stop_animation()
+            st.session_state.animator.clear_frame_queue()
+            st.session_state.animation_running = False 
         uiutils.execute_algorithm(st.session_state.view_mode)
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
