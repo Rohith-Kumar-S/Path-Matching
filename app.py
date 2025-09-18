@@ -78,6 +78,10 @@ if "animator" not in st.session_state:
 if st.session_state.execute:
     try:
         st.session_state.algorithm_executed = False
+        if st.session_state.animation_running:
+            st.session_state.animator.stop_animation()
+            st.session_state.animator.clear_frame_queue()
+            st.session_state.animation_running = False
         # Reset relevant session state variables
         st.session_state.update(
             {
@@ -89,10 +93,6 @@ if st.session_state.execute:
             }
         )  
         uiutils.execute_algorithm(st.session_state.view_mode)
-        if st.session_state.animation_running:
-            st.session_state.animator.stop_animation()
-            st.session_state.animator.clear_frame_queue()
-            st.session_state.animation_running = False
     except MemoryError:
         st.toast("Too Many Sources/Targets to process", icon="⚠️")
         time.sleep(2)
@@ -130,7 +130,7 @@ with col1:
     with st.container():
         options = ["Quick", "Slider", "Animated"]
         st.segmented_control(
-                "View Mode",  options=options, selection_mode="single", key="view_mode", disabled=st.session_state.animation_running
+                "View Mode",  options=options, selection_mode="single", key="view_mode"
             )
         slider_placeholder = st.empty()
         c1,c2 = st.columns(2, vertical_alignment="top")
@@ -143,8 +143,8 @@ with col1:
         st.selectbox("Matcher", ["Greedy", "Linear Programming"], key="matcher")
         
         c3, c4, c5 = st.columns([0.7,1, 2.5], vertical_alignment="top")
-        c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}), disabled=st.session_state.animation_running)
-        if c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource), disabled=st.session_state.animation_running):
+        c3.button("Run" , on_click=lambda: st.session_state.update({"execute": True}))
+        if c4.button("Reset", on_click=uiutils.reset, args=(st.cache_data, st.cache_resource)):
             st.rerun()
         if len(st.session_state.frames) > 0 and st.session_state.view_mode=="Slider":
             st.session_state.frame_index = slider_placeholder.slider(
